@@ -1,0 +1,158 @@
+# Multi-Season Clustering Features
+# ================================
+# These 110 features are used for player similarity analysis.
+# The .1, .2, etc. suffixes indicate sub-columns from FBref's multi-level headers.
+
+# PLAYING TIME
+Playing Time          # Matches Played
+Playing Time.1        # Starts
+Playing Time.2        # Minutes
+Playing Time.3        # Minutes per Match
+
+# PERFORMANCE (Goals & Assists)
+Performance           # Goals
+Performance.1         # Assists
+Performance.2         # Goals + Assists
+Performance.3         # Non-Penalty Goals
+Performance.4         # Penalty Goals
+Performance.5         # Penalty Attempts
+Performance.6         # Yellow Cards
+Performance.7         # Red Cards
+
+# EXPECTED (xG Stats)
+Expected              # xG (Expected Goals)
+Expected.1            # npxG (Non-Penalty xG)
+Expected.2            # xAG (Expected Assists)
+Expected.3            # npxG + xAG
+Expected.4            # npxG per Shot
+
+# PROGRESSION
+Progression           # Progressive Carries
+Progression.1         # Progressive Passes
+Progression.2         # Progressive Passes Received
+
+# PER 90 MINUTES
+Per 90 Minutes        # Goals per 90
+Per 90 Minutes.1      # Assists per 90
+Per 90 Minutes.2      # G+A per 90
+Per 90 Minutes.3      # Non-Penalty Goals per 90
+Per 90 Minutes.4      # G+A-PK per 90
+Per 90 Minutes.5      # xG per 90
+Per 90 Minutes.6      # xAG per 90
+Per 90 Minutes.7      # xG+xAG per 90
+Per 90 Minutes.8      # npxG per 90
+Per 90 Minutes.9      # npxG+xAG per 90
+
+# 90s PLAYED
+90s                   # 90-minute periods played
+
+# STANDARD (Shooting)
+Standard              # Shots Total
+Standard.1            # Shots on Target
+Standard.2            # SoT% (Shots on Target %)
+Standard.3            # Shots per 90
+Standard.4            # SoT per 90
+Standard.5            # Goals per Shot
+Standard.6            # Goals per SoT
+Standard.7            # Average Shot Distance
+Standard.8            # Free Kick Shots
+Standard.9            # Penalty Kicks Made
+Standard.10           # Penalty Kicks Attempted
+Standard.11           # xG per Shot
+
+# TOTAL PASSING
+Total                 # Total Passes Completed
+Total.1               # Total Passes Attempted
+Total.2               # Pass Completion %
+Total.3               # Total Pass Distance
+Total.4               # Progressive Pass Distance
+
+# SHORT PASSING
+Short                 # Short Passes Completed
+Short.1               # Short Passes Attempted
+Short.2               # Short Pass %
+
+# MEDIUM PASSING
+Medium                # Medium Passes Completed
+Medium.1              # Medium Passes Attempted
+Medium.2              # Medium Pass %
+
+# LONG PASSING
+Long                  # Long Passes Completed
+Long.1                # Long Passes Attempted
+Long.2                # Long Pass %
+
+# CREATIVITY
+Ast                   # Assists
+xAG                   # Expected Assists
+KP                    # Key Passes
+1/3                   # Passes into Final Third
+PPA                   # Passes into Penalty Area
+CrsPA                 # Crosses into Penalty Area
+PrgP                  # Progressive Passes
+
+# TOUCHES
+Touches               # Total Touches
+Touches.1             # Touches in Defensive Penalty Area
+Touches.2             # Touches in Defensive Third
+Touches.3             # Touches in Middle Third
+Touches.4             # Touches in Attacking Third
+Touches.5             # Touches in Attacking Penalty Area
+Touches.6             # Live Ball Touches
+
+# TAKE-ONS (Dribbling)
+Take-Ons              # Dribbles Attempted
+Take-Ons.1            # Successful Dribbles
+Take-Ons.2            # Dribble Success %
+Take-Ons.3            # Times Tackled During Dribble
+Take-Ons.4            # Tackled During Dribble %
+
+# CARRIES
+Carries               # Total Carries
+Carries.1             # Total Carry Distance
+Carries.2             # Progressive Carry Distance
+Carries.3             # Progressive Carries
+Carries.4             # Carries into Final Third
+Carries.5             # Carries into Penalty Area
+Carries.6             # Miscontrols
+Carries.7             # Dispossessed
+
+# RECEIVING
+Receiving             # Passes Received
+Receiving.1           # Progressive Passes Received
+
+# PERFORMANCE (Misc)
+Performance.8         # Fouls Committed
+Performance.9         # Fouls Drawn
+Performance.10        # Offsides
+Performance.11        # Crosses
+Performance.12        # Interceptions
+
+# AERIAL DUELS
+Aerial Duels          # Aerials Won
+Aerial Duels.1        # Aerials Lost
+Aerial Duels.2        # Aerial Win %
+
+# TACKLES
+Tackles               # Tackles
+Tackles.1             # Tackles Won
+Tackles.2             # Tackles in Defensive Third
+Tackles.3             # Tackles in Middle Third
+Tackles.4             # Tackles in Attacking Third
+
+# CHALLENGES
+Challenges            # Dribblers Tackled
+Challenges.1          # Dribbles Challenged
+Challenges.2          # Challenge %
+Challenges.3          # Dribblers Past
+
+# BLOCKS
+Blocks                # Total Blocks
+Blocks.1              # Shots Blocked
+Blocks.2              # Passes Blocked
+
+# DEFENSIVE
+Int                   # Interceptions
+Tkl+Int               # Tackles + Interceptions
+Clr                   # Clearances
+Err                   # Errors Leading to Shot

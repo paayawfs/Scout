@@ -1,0 +1,15 @@
+# All Positions Clustering Features
+# ==================================
+
+90s          # 90-minute periods played
+Ast          # Ast
+xAG          # xAG
+KP          # Key Passes
+1/3          # Passes into Final Third
+PPA          # Passes into Penalty Area
+CrsPA          # Crosses into Penalty Area
+PrgP          # Progressive Passes
+Int          # Interceptions
+Tkl+Int          # Tackles + Interceptions
+Clr          # Clearances
+Err          # Errors Leading to Shot

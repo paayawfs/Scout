@@ -1,0 +1,333 @@
+@import "tailwindcss";
+
+/* ===================================
+   NextGen Scout - StatMuse Inspired Theme
+   =================================== */
+
+:root {
+  /* Core Colors */
+  --background: #FFFFFF;
+  --foreground: #000000;
+
+  --primary: #000000;
+  --primary-foreground: #FFFFFF;
+
+  --accent: #3B82F6;
+  /* Electric Blue */
+  --accent-foreground: #FFFFFF;
+
+  --muted: #F3F4F6;
+  --muted-foreground: #6B7280;
+
+  --border: #000000;
+  /* Bold Borders */
+
+  /* Shadows - Minimal/Bold */
+  --shadow-comic: 4px 4px 0px 0px #000000;
+
+  --font-heading: 'Impact', 'Arial Black', sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'Courier New', monospace;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-accent: var(--accent);
+  --font-heading: var(--font-heading);
+  --font-mono: var(--font-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ===================================
+   Typography
+   =================================== */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-body);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--primary);
+  text-transform: uppercase;
+}
+
+h1 {
+  font-size: 3.5rem;
+  line-height: 1.1;
+}
+
+h2 {
+  font-size: 2.5rem;
+}
+
+h3 {
+  font-size: 1.75rem;
+}
+
+.hero-title {
+  font-size: 4rem;
+  font-weight: 900;
+  color: var(--primary);
+  text-transform: uppercase;
+  line-height: 0.9;
+}
+
+.stat-value {
+  font-family: var(--font-mono);
+  /* Data Look */
+  font-weight: 700;
+  font-size: 2.5rem;
+  color: var(--primary);
+  letter-spacing: -1px;
+}
+
+.stat-label {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  letter-spacing: 0.05em;
+}
+
+/* ===================================
+   Components
+   =================================== */
+
+/* Cards - Comic / Bold Style */
+.card,
+.card-elevated,
+.feature-card,
+.data-card {
+  background: #FFFFFF;
+  border: 2px solid #000000;
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.2s ease;
+  box-shadow: 2px 2px 0px 0px #000000;
+  /* Flat Shadow */
+}
+
+.card:hover,
+.card-elevated:hover,
+.feature-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px 0px var(--accent);
+  border-color: #000000;
+}
+
+/* Buttons */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 2rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-weight: 700;
+  text-transform: uppercase;
+  border: 2px solid var(--primary);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 2px 2px 0px 0px #666;
+}
+
+.btn-primary:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0px 0px #000000;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 2rem;
+  background: #FFFFFF;
+  color: var(--primary);
+  font-weight: 700;
+  text-transform: uppercase;
+  border: 2px solid var(--primary);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background: var(--muted);
+  box-shadow: 3px 3px 0px 0px #000000;
+}
+
+/* Inputs */
+input[type="text"],
+input[type="search"],
+input[type="number"],
+select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid #000000 !important;
+  /* Force bold border */
+  border-radius: 8px;
+  background: #FFFFFF;
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  color: #000000;
+  outline: none;
+  transition: all 0.2s;
+  box-shadow: none;
+}
+
+input:focus,
+select:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 4px 4px 0px 0px var(--accent);
+}
+
+.search-hero {
+  height: 64px;
+  font-size: 1.25rem;
+  padding-left: 3.5rem !important;
+  /* Space for icon */
+  border-width: 3px !important;
+}
+
+/* Filter Chips */
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border: 2px solid #E5E7EB;
+  border-radius: 20px;
+  background: #FFFFFF;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #000000;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-chip:hover {
+  border-color: #000000;
+}
+
+.filter-chip.active {
+  background: #000000;
+  color: #FFFFFF;
+  border-color: #000000;
+}
+
+/* Badges */
+.similarity-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  background: var(--accent);
+  color: #FFFFFF;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.875rem;
+  border: 2px solid #000000;
+  border-radius: 6px;
+  box-shadow: 2px 2px 0px 0px #000000;
+}
+
+/* Dividers */
+.divider {
+  height: 2px;
+  background: #E5E7EB;
+  width: 100%;
+}
+
+.divider-accent {
+  height: 4px;
+  background: var(--accent);
+  width: 80px;
+  border-radius: 0;
+}
+
+/* Spinner */
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 4px solid #E5E7EB;
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Utilities */
+.text-primary {
+  color: var(--primary);
+}
+
+.text-white {
+  color: var(--background);
+}
+
+/* Map text-white to background if needed, or remove usage */
+.bg-accent {
+  background: var(--accent);
+}
+
+.text-accent {
+  color: var(--accent);
+}
+
+/* Navigation */
+.nav-link {
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.nav-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 3px;
+}
+
+/* Animations - crisp */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
