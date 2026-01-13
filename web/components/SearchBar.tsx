@@ -8,7 +8,12 @@ interface SearchBarProps {
     placeholder?: string;
 }
 
-export default function SearchBar({ onSelect, placeholder = "Search player... (supports regex e.g. ^Sal)" }: SearchBarProps) {
+// Normalize string by removing accents (é → e, ñ → n, etc.)
+const normalizeAccents = (str: string): string => {
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+};
+
+export default function SearchBar({ onSelect, placeholder = "Search player... (regex: ^Sal)" }: SearchBarProps) {
     const [query, setQuery] = useState("");
     const [results, setResults] = useState<Player[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -22,24 +27,37 @@ export default function SearchBar({ onSelect, placeholder = "Search player... (s
 
         setIsLoading(true);
         try {
+            // Normalize query for accent-insensitive search
+            const normalizedQuery = normalizeAccents(searchQuery.toLowerCase());
+
             // Check if query looks like a regex pattern
             const isRegex = /[\\^$.*+?()[\]{}|]/.test(searchQuery);
 
-            let query = supabase.from("players").select("*");
+            let dbQuery = supabase.from("players").select("*");
 
             if (isRegex) {
                 // Use PostgreSQL regex match (case-insensitive with ~*)
-                // Escape any problematic characters for safety
-                query = query.filter('name', '~*', searchQuery);
+                dbQuery = dbQuery.filter('name', '~*', searchQuery);
             } else {
-                // Standard case-insensitive search
-                query = query.ilike("name", `%${searchQuery}%`);
+                // Fetch broader results then filter client-side for accents
+                // Use first 2 chars for server query, filter rest client-side
+                const simpleQuery = normalizedQuery.slice(0, 3);
+                dbQuery = dbQuery.ilike("name", `%${simpleQuery}%`);
             }
 
-            const { data, error } = await query.limit(15);
+            const { data, error } = await dbQuery.limit(50);
 
             if (error) throw error;
-            setResults(data || []);
+
+            // Filter results client-side for accent-insensitive matching
+            let filtered = data || [];
+            if (!isRegex && filtered.length > 0) {
+                filtered = filtered.filter(player =>
+                    normalizeAccents(player.name.toLowerCase()).includes(normalizedQuery)
+                ).slice(0, 15);
+            }
+
+            setResults(filtered);
         } catch (err) {
             console.error("Search error:", err);
             setResults([]);
