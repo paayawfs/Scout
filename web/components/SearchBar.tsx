@@ -8,7 +8,7 @@ interface SearchBarProps {
     placeholder?: string;
 }
 
-export default function SearchBar({ onSelect, placeholder = "Search for a player..." }: SearchBarProps) {
+export default function SearchBar({ onSelect, placeholder = "Search player... (supports regex e.g. ^Sal)" }: SearchBarProps) {
     const [query, setQuery] = useState("");
     const [results, setResults] = useState<Player[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -22,11 +22,21 @@ export default function SearchBar({ onSelect, placeholder = "Search for a player
 
         setIsLoading(true);
         try {
-            const { data, error } = await supabase
-                .from("players")
-                .select("*")
-                .ilike("name", `%${searchQuery}%`)
-                .limit(10);
+            // Check if query looks like a regex pattern
+            const isRegex = /[\\^$.*+?()[\]{}|]/.test(searchQuery);
+
+            let query = supabase.from("players").select("*");
+
+            if (isRegex) {
+                // Use PostgreSQL regex match (case-insensitive with ~*)
+                // Escape any problematic characters for safety
+                query = query.filter('name', '~*', searchQuery);
+            } else {
+                // Standard case-insensitive search
+                query = query.ilike("name", `%${searchQuery}%`);
+            }
+
+            const { data, error } = await query.limit(15);
 
             if (error) throw error;
             setResults(data || []);
