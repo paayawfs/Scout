@@ -33,9 +33,9 @@ export default function RadarComparison({
 }: RadarComparisonProps) {
     const metrics = getPositionSet(player1.position || '');
 
-    // Normalize values to 0-9 scale fixed
+    // Normalize values to 0-7 scale fixed
     const normalizeValue = (value: number) => {
-        const normalized = (value / 9) * 100; // 9 is the fixed max
+        const normalized = (value / 7) * 100; // 7 is the fixed max
         return Math.max(0, Math.min(100, normalized));
     };
 
