@@ -66,6 +66,7 @@ export async function POST(request: NextRequest) {
 
     // Build stats summary for the prompt
     const statsSummary = player.stats
+      .filter(s => s.name !== 'Goals per Shot' && s.name !== 'G/Sh')
       .map(s => `- ${s.name}: ${s.value.toFixed(2)} per 90 (${s.percentile}th percentile)`)
       .join('\n');
 

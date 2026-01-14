@@ -378,7 +378,7 @@ print("=" * 60)
 RADAR_STATS = {
     # --- OFFENSIVE ---
     'Gls': 'Goals', 'Ast': 'Assists', 'npxG': 'Non-Penalty xG', 'xAG': 'xAG',
-    'Sh': 'Shots', 'SoT': 'Shots on Target', 'G/Sh': 'Goals per Shot',
+    'Sh': 'Shots', 'SoT': 'Shots on Target', 'G/Sh': 'Goals per Shot', 'G/Sh': 'Goals per Shot',
     'Dist': 'Avg Shot Distance', 'PK': 'Penalty Kicks', 'PKatt': 'PKs Attempted',
     # --- PASSING ---
     'PrgP': 'Progressive Passes', 'KP': 'Key Passes', '1/3': 'Final 1/3 Passes',
