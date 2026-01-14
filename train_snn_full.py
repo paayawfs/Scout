@@ -62,22 +62,45 @@ print("STEP 1: LOADING ALL RAW DATA")
 print("=" * 60)
 
 # Load all tables with proper headers
+# Use header=1 for most files
+standard = pd.read_csv(RAW_DIR / "merged_standard.csv", header=1).drop_duplicates()
+defense = pd.read_csv(RAW_DIR / "merged_defense.csv", header=1).drop_duplicates()
+# Rename colliding columns in Defense
+defense.rename(columns={'Sh': 'Sh_Blocked', 'Att': 'Tkl_Att'}, inplace=True)
+
+possession = pd.read_csv(RAW_DIR / "merged_possession.csv", header=1).drop_duplicates()
+# Rename colliding columns in Possession
+possession.rename(columns={'Att': 'Drib_Att'}, inplace=True)
+
+shooting = pd.read_csv(RAW_DIR / "merged_shooting.csv", header=1).drop_duplicates()
+misc = pd.read_csv(RAW_DIR / "merged_misc.csv", header=1).drop_duplicates()
+
+# PASSING DATA SPECIAL HANDLING: Mixed headers (some in row 0, some in row 1)
+# 1. Read with header=1 to get Cmp, Att, etc.
+passing = pd.read_csv(RAW_DIR / "merged_passing.csv", header=1).drop_duplicates()
+# 2. Read header=0 to get KP, PPA, etc (which are Unnamed in header=1)
+passing_h0 = pd.read_csv(RAW_DIR / "merged_passing.csv", header=0, nrows=0)
+h0_cols = passing_h0.columns.tolist()
+# 3. Patch Unnamed columns
+new_cols = []
+for i, col in enumerate(passing.columns):
+    if "Unnamed" in col and i < len(h0_cols):
+        # Use header from row 0 if row 1 is unnamed
+        new_cols.append(h0_cols[i])
+    else:
+        new_cols.append(col)
+passing.columns = new_cols
+
 renames = {
     'Unnamed: 0': 'league', 'Unnamed: 1': 'season', 'Unnamed: 2': 'team',
     'Unnamed: 3': 'player', 'Unnamed: 4': 'nation', 'Unnamed: 5': 'pos',
     'Unnamed: 6': 'age', 'Unnamed: 7': 'born', 'Unnamed: 8': '90s_dup'
 }
 
-standard = pd.read_csv(RAW_DIR / "merged_standard.csv", header=1).drop_duplicates()
-passing = pd.read_csv(RAW_DIR / "merged_passing.csv", header=0).drop_duplicates()
-defense = pd.read_csv(RAW_DIR / "merged_defense.csv", header=1).drop_duplicates()
-possession = pd.read_csv(RAW_DIR / "merged_possession.csv", header=1).drop_duplicates()
-shooting = pd.read_csv(RAW_DIR / "merged_shooting.csv", header=1).drop_duplicates()
-misc = pd.read_csv(RAW_DIR / "merged_misc.csv", header=1).drop_duplicates()
-
 # Apply renames
-for d in [standard, defense, possession, shooting, misc]:
-    d.rename(columns=renames, inplace=True)
+for d in [standard, passing, defense, possession, shooting, misc]:
+    if isinstance(d, pd.DataFrame):
+        d.rename(columns=renames, inplace=True)
 
 print(f"  Standard: {len(standard)} rows, {len(standard.columns)} cols")
 print(f"  Passing:  {len(passing)} rows, {len(passing.columns)} cols")
@@ -94,6 +117,10 @@ for name, table in [('passing', passing), ('defense', defense),
                     ('possession', possession), ('shooting', shooting), ('misc', misc)]:
     existing = set(df.columns)
     new_cols = [c for c in table.columns if c not in existing or c in KEY_COLS]
+    # Ensure keys are present in both
+    if not all(k in table.columns for k in KEY_COLS):
+        print(f"Warning: {name} table missing key columns!")
+        continue
     df = df.merge(table[new_cols], on=KEY_COLS, how='left', suffixes=('', f'_{name}'))
 
 print(f"\n  Merged: {df.shape[0]} rows, {df.shape[1]} columns")
@@ -123,7 +150,7 @@ def clean_age(age_str):
 df['Age'] = df['Age'].apply(clean_age)
 
 # Filter by playing time
-nineties_col = next((c for c in df.columns if str(c) == '90s'), None)
+nineties_col = next((c for c in df.columns if '90s' in str(c).lower()), None)
 if nineties_col:
     df = df[df[nineties_col] >= 2.0]
     print(f"  After 90s filter: {len(df)} rows")
@@ -151,7 +178,9 @@ def weighted_agg(group):
         'League': group['League'].iloc[-1],
         'Age': group['Age'].iloc[-1],
     }
-    weights = group['90s'].values if '90s' in group.columns else np.ones(len(group))
+    # Be more robust looking for the 90s column (could be '90s' or '90s_standard' etc)
+    n90_col = next((c for c in group.columns if '90s' in str(c).lower()), '90s')
+    weights = group[n90_col].values if n90_col in group.columns else np.ones(len(group))
     weights = np.maximum(weights, 0.1)
     
     for col in numeric_cols:
@@ -354,6 +383,8 @@ RADAR_STATS = {
     # --- PASSING ---
     'PrgP': 'Progressive Passes', 'KP': 'Key Passes', '1/3': 'Final 1/3 Passes',
     'PPA': 'Penalty Area Passes', 'CrsPA': 'Crosses into PA',
+    # --- PASSING (Total/Comp) Added ---
+    'Att': 'Passes Attempted', 'Cmp': 'Passes Completed',
     # --- POSSESSION ---
     'PrgR': 'Progressive Receives', 'PrgC': 'Progressive Carries',
     'Succ': 'Successful Dribbles', 'Touches': 'Touches', 'Dis': 'Dispossessed',
@@ -368,10 +399,14 @@ RADAR_STATS = {
 
 RADAR_FEATURES = [f for f in RADAR_STATS.keys() if f in df_agg.columns]
 RADAR_LABELS = [RADAR_STATS[f] for f in RADAR_FEATURES]
+missing_radar = [f for f in RADAR_STATS.keys() if f not in df_agg.columns]
+if missing_radar:
+    print(f"Warning: Missing RADAR columns: {missing_radar}")
 print(f"  Radar stats available: {len(RADAR_FEATURES)}")
 
-# Per-90 conversion
-nineties = df_agg['90s'].replace(0, np.nan) if '90s' in df_agg.columns else None
+# Per-90 conversion safe check
+nineties_col = next((c for c in df_agg.columns if '90s' in str(c).lower()), None)
+nineties = df_agg[nineties_col].replace(0, np.nan) if nineties_col else None
 
 # Players
 players = []
@@ -389,21 +424,40 @@ for i, row in df_agg.iterrows():
 # Stats (all radar features, per-90)
 stats = []
 for i, row in df_agg.iterrows():
+    # Calculate division factor for this player
+    if nineties is not None:
+        n90 = nineties.iloc[i] if pd.notna(nineties.iloc[i]) else 1.0
+        n90 = max(n90, 0.1) # Avoid division by zero
+    else:
+        n90 = 1.0
+
     for j, feat in enumerate(RADAR_FEATURES):
-        val = row[feat]
-        if nineties is not None:
-            n90 = nineties.iloc[i] if pd.notna(nineties.iloc[i]) else 1
-            val = val / max(n90, 0.1) if not pd.isna(val) else 0
+        raw_val = row[feat]
+        if pd.isna(raw_val):
+            val = 0.0
+        else:
+            val = raw_val / n90
+
+        # Calculate min/max range based on PER-90 values, not raw totals
+        # This fixes the percentile bug
+        all_raw = df_agg[feat].dropna()
+        all_n90 = nineties.dropna() if nineties is not None else pd.Series(np.ones(len(all_raw)), index=all_raw.index)
         
-        all_vals = df_agg[feat].dropna()
-        min_val = float(np.percentile(all_vals, 5))
-        max_val = float(np.percentile(all_vals, 95))
+        # Align indices
+        common_idx = all_raw.index.intersection(all_n90.index)
+        all_raw = all_raw.loc[common_idx]
+        all_n90 = all_n90.loc[common_idx].clip(lower=0.1)
+        
+        all_per90 = all_raw / all_n90
+        
+        min_val = float(np.percentile(all_per90, 5))
+        max_val = float(np.percentile(all_per90, 95))
         
         stats.append({
             'player_id': int(i),
             'stat_name': RADAR_LABELS[j],
             'stat_key': feat,
-            'value': round(float(val) if pd.notna(val) else 0, 3),
+            'value': round(float(val), 3),
             'min_range': round(min_val, 3),
             'max_range': round(max_val, 3)
         })

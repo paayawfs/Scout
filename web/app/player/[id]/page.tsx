@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabase, Player, PlayerStat } from "@/lib/supabase";
 import PlayerCard from "@/components/PlayerCard";
 import FilterBar from "@/components/FilterBar";
+import PlayerInsightsPanel from "@/components/PlayerInsights";
 import { ALL_NATIONS } from "@/lib/constants";
 
 interface SimilarPlayer extends Player {
@@ -179,6 +180,18 @@ export default function PlayerPage() {
                         ))}
                     </div>
                 </div>
+            )}
+
+            {/* Player Insights */}
+            {stats.length > 0 && player && (
+                <PlayerInsightsPanel
+                    playerId={playerId}
+                    playerName={player.name}
+                    position={player.position || 'Unknown'}
+                    squad={player.squad || 'Unknown'}
+                    age={player.age || 0}
+                    stats={stats}
+                />
             )}
 
             {/* Similar Players */}

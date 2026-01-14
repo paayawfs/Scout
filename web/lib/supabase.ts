@@ -31,3 +31,14 @@ export interface PlayerSimilarity {
     similarity: number;
     rank: number;
 }
+
+export interface PlayerInsight {
+    id?: number;
+    player_id: number;
+    summary: string;
+    strengths: { stat: string; insight: string }[];
+    improvements: { stat: string; insight: string }[];
+    playing_style: string;
+    comparison: string;
+    created_at?: string;
+}

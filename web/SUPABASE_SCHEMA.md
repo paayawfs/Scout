@@ -46,6 +46,20 @@ CREATE TABLE player_similarity (
 
 CREATE INDEX idx_similarity_player ON player_similarity(player_id);
 CREATE INDEX idx_similarity_rank ON player_similarity(player_id, rank);
+
+-- AI-generated player insights (cached)
+CREATE TABLE player_insights (
+  id SERIAL PRIMARY KEY,
+  player_id INTEGER REFERENCES players(id) ON DELETE CASCADE UNIQUE,
+  summary TEXT,
+  strengths JSONB,
+  improvements JSONB,
+  playing_style TEXT,
+  comparison TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_insights_player ON player_insights(player_id);
 ```
 
 ## Row Level Security (RLS)
@@ -60,6 +74,11 @@ ALTER TABLE player_similarity ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public read access" ON players FOR SELECT USING (true);
 CREATE POLICY "Public read access" ON player_stats FOR SELECT USING (true);
 CREATE POLICY "Public read access" ON player_similarity FOR SELECT USING (true);
+CREATE POLICY "Public read access" ON player_insights FOR SELECT USING (true);
+CREATE POLICY "Public insert access" ON player_insights FOR INSERT WITH CHECK (true);
+
+-- Enable RLS on player_insights
+ALTER TABLE player_insights ENABLE ROW LEVEL SECURITY;
 ```
 
 ## Import Data
