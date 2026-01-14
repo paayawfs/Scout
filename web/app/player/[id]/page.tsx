@@ -47,7 +47,9 @@ export default function PlayerPage() {
                     .eq("player_id", playerId);
 
                 if (statsData) {
-                    setStats(statsData);
+                    // Filter out "Goals per Shot" as requested
+                    const filteredStats = statsData.filter(s => s.stat_name !== 'Goals per Shot');
+                    setStats(filteredStats);
                 }
 
                 setAllNations(ALL_NATIONS);
