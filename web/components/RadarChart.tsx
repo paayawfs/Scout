@@ -33,9 +33,10 @@ export default function RadarComparison({
 }: RadarComparisonProps) {
     const metrics = getPositionSet(player1.position || '');
 
-    // Normalize values to 0-7 scale fixed
-    const normalizeValue = (value: number) => {
-        const normalized = (value / 7) * 100; // 7 is the fixed max
+    // Normalize values to 0-100 scale based on the actual data range
+    const normalizeValue = (value: number, maxVal: number) => {
+        if (maxVal === 0) return 0;
+        const normalized = (value / maxVal) * 100;
         return Math.max(0, Math.min(100, normalized));
     };
 
@@ -51,11 +52,13 @@ export default function RadarComparison({
     const data = metrics.map((metric) => {
         const val1 = p1Map.get(metric.key) || 0;
         const val2 = p2Map.get(metric.key) || 0;
+        // Global max scaling (relative to comparison)
+        const maxVal = Math.max(val1, val2) * 1.2 || 1;
 
         return {
             stat: metric.label,
-            value1: normalizeValue(val1),
-            value2: normalizeValue(val2),
+            value1: normalizeValue(val1, maxVal),
+            value2: normalizeValue(val2, maxVal),
             raw1: val1.toFixed(2),
             raw2: val2.toFixed(2),
             fullMark: 100, // Forcing outer frame
