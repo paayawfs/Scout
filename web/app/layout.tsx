@@ -20,6 +20,8 @@ export const metadata: Metadata = {
   keywords: ["football", "soccer", "player analysis", "scouting", "replacements", "AI", "analytics"],
 };
 
+import { Analytics } from "@vercel/analytics/react";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -51,6 +53,7 @@ export default function RootLayout({
 
             {/* Main Content */}
             <main>{children}</main>
+            <Analytics />
 
             {/* Footer */}
             <footer className="bg-white text-black mt-16 border-t-2 border-black">
