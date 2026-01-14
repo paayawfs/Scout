@@ -96,14 +96,14 @@ export default function PlayerInsightsPanel({
         <div className="mb-8 sm:mb-12">
             {/* Header */}
             <div className="bg-gradient-to-r from-purple-50 to-white border-2 border-black rounded-xl p-6 shadow-[4px_4px_0px_0px_#000000]">
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl text-primary font-bold flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row items-center justify-between mb-4 gap-4 sm:gap-0">
+                    <h2 className="text-xl text-primary font-bold flex items-center gap-2 w-full sm:w-auto">
                         AI Player Analysis
                     </h2>
                     {!analysis && !loading && (
                         <button
                             onClick={handleGenerateAnalysis}
-                            className="btn-primary text-sm flex items-center gap-2"
+                            className="btn-primary text-sm flex items-center justify-center gap-2 w-full sm:w-auto"
                         >
                             <span>✨</span> Generate Analysis
                         </button>
