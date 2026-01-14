@@ -65,7 +65,7 @@ export default function PlayerPage() {
             )
           `)
                     .eq("player_id", playerId)
-                    .order("rank")
+                    .order("similarity", { ascending: false })
                     .limit(50);
 
                 if (similarData) {
