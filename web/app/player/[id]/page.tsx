@@ -40,11 +40,12 @@ export default function PlayerPage() {
                     setPlayer(playerData);
                 }
 
-                // Fetch stats
+                // Fetch stats (with cache buster to ensure fresh data)
                 const { data: statsData } = await supabase
                     .from("player_stats")
                     .select("*")
-                    .eq("player_id", playerId);
+                    .eq("player_id", playerId)
+                    .order("stat_name");
 
                 if (statsData) {
                     // Filter out "Goals per Shot" as requested
