@@ -70,7 +70,6 @@ export async function POST(request: NextRequest) {
           strengths: cached.strengths,
           improvements: cached.improvements,
           playingStyle: cached.playing_style,
-          comparison: cached.comparison,
         },
         cached: true,
       });
@@ -136,8 +135,7 @@ Respond with JSON only:
       "insight": "What this lower percentile suggests. Could be tactical choice, role-based, or area to develop."
     }
   ],
-  "playingStyle": "One paragraph on how this player likely plays based on the numbers.",
-  "comparison": "1-2 similar high-profile players."
+  "playingStyle": "One paragraph on how this player likely plays based on the numbers."
 }
 
 Include 3 strengths (highest percentiles) and 2-4 contextual notes (lower percentiles). Write in plain text, no markdown formatting.`;
@@ -163,7 +161,6 @@ Include 3 strengths (highest percentiles) and 2-4 contextual notes (lower percen
         strengths: analysis.strengths,
         improvements: analysis.improvements,
         playing_style: analysis.playingStyle,
-        comparison: analysis.comparison,
       });
 
     if (insertError) {

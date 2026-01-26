@@ -8,7 +8,6 @@ interface GeminiAnalysis {
     strengths: { stat: string; insight: string }[];
     improvements: { stat: string; insight: string }[];
     playingStyle: string;
-    comparison: string;
 }
 
 interface PlayerInsightsProps {
@@ -18,11 +17,6 @@ interface PlayerInsightsProps {
     squad: string;
     age: number;
     stats: PlayerStat[];
-}
-
-function calculatePercentile(value: number, min: number, max: number): number {
-    if (max === min) return 50;
-    return Math.round(Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100)));
 }
 
 export default function PlayerInsightsPanel({
@@ -47,10 +41,11 @@ export default function PlayerInsightsPanel({
         setExpanded(true);
 
         try {
-            const statsWithPercentile = stats.map(s => ({
+            // Send stats with percentiles to Gemini
+            const statsForAnalysis = stats.map(s => ({
                 name: s.stat_name,
                 value: s.value,
-                percentile: calculatePercentile(s.value, s.min_range, s.max_range),
+                percentile: s.percentile,
             }));
 
             const response = await fetch('/api/insights', {
@@ -63,7 +58,7 @@ export default function PlayerInsightsPanel({
                         position,
                         squad,
                         age,
-                        stats: statsWithPercentile,
+                        stats: statsForAnalysis,
                     },
                 }),
             });
@@ -188,15 +183,6 @@ export default function PlayerInsightsPanel({
                             </div>
                         )}
 
-                        {/* Player Comparison */}
-                        {analysis.comparison && (
-                            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                                <h3 className="font-bold text-purple-800 mb-2 flex items-center gap-2">
-                                    <span>🔄</span> Similar Profile
-                                </h3>
-                                <p className="text-gray-700">{analysis.comparison}</p>
-                            </div>
-                        )}
                     </div>
                 )}
 

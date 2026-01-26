@@ -1,23 +1,24 @@
 # NextGen Scout 🔍⚽
 
-**AI-powered player scouting and similarity analysis using Siamese Neural Networks.**
+**AI-powered football player scouting and similarity analysis.**
 
 Find statistically similar football players based on comprehensive performance metrics including goals, assists, xG, passing, dribbling, defensive actions, and more.
 
 ## Features
 
-- 🧠 **Siamese Neural Network** - Deep learning model trained on 100+ player statistics
-- 📊 **Comprehensive Stats** - Data averaged from 2024/25 and 2025/26 seasons
-- 🎯 **Smart Similarity** - Gaussian RBF kernel for accurate player matching
-- 📈 **Radar Charts** - Visual comparison of player attributes
+- 🤖 **AI Player Analysis** - Gemini-powered scouting reports with tactical insights
+- 📊 **Position-Specific Percentiles** - Compare FWs vs FWs, MFs vs MFs, DFs vs DFs
+- 📈 **Comprehensive Stats** - Data averaged from 2024/25 and 2025/26 seasons
+- 🎯 **Smart Similarity** - Find statistical twins across 7 European leagues
+- 📉 **Radar Charts** - Visual comparison of player attributes
 - 🔍 **Advanced Filters** - Search by position, nationality, league, and age
 
 ## Tech Stack
 
-- **Frontend**: Next.js 16, React, TailwindCSS
+- **Frontend**: Next.js 16, React 19, TailwindCSS 4
 - **Backend**: Supabase (PostgreSQL)
-- **ML**: PyTorch, Siamese Neural Networks
-- **Data**: FBref player statistics
+- **AI**: Google Gemini (player analysis)
+- **Data**: FBref player statistics (7 leagues)
 
 ## Project Structure
 
@@ -25,9 +26,7 @@ Find statistically similar football players based on comprehensive performance m
 ├── web/                    # Next.js web application
 │   ├── app/               # App router pages
 │   └── components/        # React components
-├── train_snn_full.py      # Full-feature SNN training script
 ├── upload_to_supabase.py  # Database upload script
-├── export_to_json.py      # Data export utilities
 └── data/                  # Player data (gitignored)
 ```
 
@@ -62,6 +61,11 @@ npm install
 # Create .env file with:
 SUPABASE_URL=your_supabase_url
 SUPABASE_SERVICE_KEY=your_service_key
+
+# Create web/.env.local with:
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+GEMINI_API_KEY=your_gemini_api_key
 ```
 
 ### Running the App
@@ -74,7 +78,7 @@ npm run dev
 
 ## Data Pipeline
 
-1. **Train SNN Model**: `python train_snn_full.py`
+1. **Process Data**: `python process_merged_data.py`
 2. **Upload to Supabase**: `python upload_to_supabase.py`
 
 ## License
@@ -83,4 +87,4 @@ MIT License
 
 ---
 
-*Data sourced from FBref. Powered by Siamese Neural Networks.*
+*Data sourced from FBref.*
