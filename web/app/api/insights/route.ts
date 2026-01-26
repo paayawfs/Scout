@@ -1,9 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+
+// Force dynamic rendering - no caching
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+
+// Create a fresh Supabase client for this API route (no caching)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+function getSupabase() {
+  return createClient(supabaseUrl, supabaseKey, {
+    global: {
+      fetch: (url, options = {}) => {
+        return fetch(url, {
+          ...options,
+          cache: 'no-store',
+        });
+      },
+    },
+  });
+}
 
 interface PlayerStats {
   id: number;
@@ -17,8 +38,6 @@ interface PlayerStats {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log('Received body:', JSON.stringify(body, null, 2));
-
     const { player } = body as { player: PlayerStats };
 
     if (!player || !player.id) {
@@ -27,6 +46,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Create fresh Supabase client for each request
+    const supabase = getSupabase();
 
     console.log('Step 1: Checking cache for player', player.id);
 
@@ -62,46 +84,63 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // FETCH FRESH STATS FROM DATABASE - don't trust frontend data
+    console.log('Step 3: Fetching fresh stats from database for player', player.id);
+    const { data: freshStats, error: statsError } = await supabase
+      .from('player_stats')
+      .select('stat_name, value, percentile')
+      .eq('player_id', player.id);
+
+    if (statsError || !freshStats || freshStats.length === 0) {
+      console.error('Failed to fetch fresh stats:', statsError);
+      return NextResponse.json(
+        { error: 'Failed to fetch player stats', details: statsError?.message },
+        { status: 500 }
+      );
+    }
+
+    console.log('Step 4: Fresh stats from DB:', freshStats.slice(0, 3), '...');
+
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-    // Build stats summary for the prompt
-    const statsSummary = player.stats
-      .filter(s => s.name !== 'Goals per Shot' && s.name !== 'G/Sh')
-      .map(s => `- ${s.name}: ${s.value.toFixed(2)} per 90 (${s.percentile}th percentile)`)
+    // Build stats summary with FRESH percentiles from database
+    const statsSummary = freshStats
+      .filter(s => s.stat_name !== 'Goals per Shot' && s.stat_name !== 'G/Sh')
+      .map(s => `- ${s.stat_name}: ${s.value.toFixed(2)} per 90 (${s.percentile}th percentile)`)
       .join('\n');
 
-    const prompt = `You are an expert football analyst. Analyze this player's statistics and provide insights.
+    const prompt = `You are an expert football analyst writing for a scouting report. Analyze this player's statistics.
 
 PLAYER: ${player.name}
 POSITION: ${player.position}
 CLUB: ${player.squad}
 AGE: ${player.age}
 
-STATISTICS (per 90 minutes, with league percentile):
+STATISTICS (per 90 minutes, with percentile ranking across all players in top European leagues):
 ${statsSummary}
 
-Provide a detailed analysis in JSON format with these sections:
+The percentile shows where this player ranks compared to all outfield players. 90+ is elite, 70-89 is above average, 30-69 is average, below 30 is below average.
+
+Respond with JSON only:
 {
-  "summary": "2-3 sentence overview of player profile and role",
+  "summary": "2-3 sentence overview of player profile",
   "strengths": [
     {
       "stat": "Stat Name",
-      "insight": "What this high number means for gameplay. Explain the stat, how it impacts the team, and what playing style leads to this strength. Be specific about tactical implications."
+      "insight": "Explain what this stat and percentile tells us. Mention the actual per-90 value and percentile. Discuss tactical implications."
     }
   ],
   "improvements": [
     {
-      "stat": "Stat Name", 
-      "insight": "What this lower number indicates. Explain whether this is due to playing style, role, or an area to develop. Not every low stat is a weakness - context matters."
+      "stat": "Stat Name",
+      "insight": "What this lower percentile suggests. Could be tactical choice, role-based, or area to develop."
     }
   ],
-  "playingStyle": "One paragraph describing how this player likely plays based on their statistical profile. What role do they fulfill? How do they contribute to the team's attack/defense?",
-  "comparison": "What type of player are they similar to? Mention 1-2 similar high-profile players if applicable."
+  "playingStyle": "One paragraph on how this player likely plays based on the numbers.",
+  "comparison": "1-2 similar high-profile players."
 }
 
-Focus on the top 3 strengths (stats above 70th percentile) and mention 2 to 4 areas for context (lower percentiles). Be analytical but accessible - explain stats for fans who may not understand advanced metrics.
-
-IMPORTANT: Do NOT use markdown formatting (like **bold** or *italics*) within the JSON response fields. Provide plain text only.`;
+Include 3 strengths (highest percentiles) and 2-4 contextual notes (lower percentiles). Write in plain text, no markdown formatting.`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
