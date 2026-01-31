@@ -42,6 +42,14 @@ export interface PlayerSimilarity {
     rank: number;
 }
 
+export interface PlayerSeasonStat {
+    player_id: number;
+    season: string;
+    stat_name: string;
+    value: number;
+    nineties: number;
+}
+
 export interface PlayerInsight {
     id?: number;
     player_id: number;

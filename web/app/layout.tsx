@@ -67,13 +67,7 @@ export default function RootLayout({
                   </div>
 
                   <p className="text-gray-500 text-sm text-center md:text-right font-mono">
-                    Data sourced from FBref · Powered by Siamese Neural Networks
-                  </p>
-                </div>
-
-                <div className="mt-6 text-right">
-                  <p className="text-gray-400 text-xs font-mono bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 inline-block">
-                    📊 Stats are an average of the 2024/25 and 2025/26 seasons
+                    Data sourced from FBref
                   </p>
                 </div>
 

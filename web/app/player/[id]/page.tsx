@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { supabase, Player, PlayerStat } from "@/lib/supabase";
+import { supabase, Player, PlayerStat, PlayerSeasonStat } from "@/lib/supabase";
 import PlayerCard from "@/components/PlayerCard";
 import FilterBar from "@/components/FilterBar";
 import PlayerInsightsPanel from "@/components/PlayerInsights";
@@ -19,6 +19,7 @@ export default function PlayerPage() {
 
     const [player, setPlayer] = useState<Player | null>(null);
     const [stats, setStats] = useState<PlayerStat[]>([]);
+    const [seasonStats, setSeasonStats] = useState<PlayerSeasonStat[]>([]);
     const [similarPlayers, setSimilarPlayers] = useState<SimilarPlayer[]>([]);
     const [filteredPlayers, setFilteredPlayers] = useState<SimilarPlayer[]>([]);
     const [loading, setLoading] = useState(true);
@@ -48,9 +49,19 @@ export default function PlayerPage() {
                     .order("stat_name");
 
                 if (statsData) {
-                    // Filter out "Goals per Shot" as requested
                     const filteredStats = statsData.filter(s => s.stat_name !== 'Goals per Shot');
                     setStats(filteredStats);
+                }
+
+                // Fetch per-season stats
+                const { data: seasonData } = await supabase
+                    .from("player_season_stats")
+                    .select("*")
+                    .eq("player_id", playerId)
+                    .order("season");
+
+                if (seasonData) {
+                    setSeasonStats(seasonData);
                 }
 
                 setAllNations(ALL_NATIONS);
@@ -166,24 +177,88 @@ export default function PlayerPage() {
                 </div>
             </div>
 
-            {/* Stats Overview - Show more stats */}
-            {stats.length > 0 && (
-                <div className="mb-8 sm:mb-12">
-                    <h2 className="text-lg sm:text-xl text-primary font-semibold mb-4">Key Statistics</h2>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
-                        {stats.slice(0, 15).map((stat) => (
-                            <div key={stat.stat_key} className="data-card text-center py-3 sm:py-4">
-                                <div className="text-xl sm:text-2xl text-primary font-bold mb-1">
-                                    {stat.value.toFixed(2)}
-                                </div>
-                                <div className="stat-label text-xs line-clamp-2">
-                                    {stat.stat_name}
-                                </div>
-                            </div>
-                        ))}
+            {/* Per-Season Stats Table */}
+            {seasonStats.length > 0 && (() => {
+                const seasons = [...new Set(seasonStats.map(s => s.season))].sort();
+                const statNames = [...new Set(seasonStats.map(s => s.stat_name))];
+
+                // Group stats by category for better organization
+                const categories: Record<string, string[]> = {
+                    "Attacking": ["Goals", "Assists", "Non-Penalty xG", "xAG"],
+                    "Passing": ["Key Passes", "Progressive Passes", "Final Third Passes", "Penalty Area Passes", "Passes Completed", "Passes Attempted"],
+                    "Possession": ["Progressive Carries", "Progressive Receives", "Successful Dribbles", "Touches"],
+                    "Defensive": ["Tackles", "Tackles Won", "Interceptions", "Blocks", "Clearances"],
+                    "Discipline": ["Fouls", "Fouls Drawn", "Yellow Cards", "Red Cards"],
+                };
+
+                const categorizedStats = Object.entries(categories)
+                    .map(([cat, names]) => ({
+                        category: cat,
+                        stats: names.filter(n => statNames.includes(n)),
+                    }))
+                    .filter(c => c.stats.length > 0);
+
+                // Build lookup: season+stat_name -> value
+                const lookup: Record<string, number> = {};
+                const ninetiesLookup: Record<string, number> = {};
+                seasonStats.forEach(s => {
+                    lookup[`${s.season}::${s.stat_name}`] = s.value;
+                    ninetiesLookup[s.season] = s.nineties;
+                });
+
+                const formatSeason = (s: string) => {
+                    const [start, end] = s.split("-");
+                    return `${start.slice(2)}/${end.slice(2)}`;
+                };
+
+                return (
+                    <div className="mb-8 sm:mb-12">
+                        <h2 className="text-lg sm:text-xl text-primary font-semibold mb-4">Per-Season Statistics</h2>
+                        <p className="text-xs text-gray-400 mb-4 font-mono">All values are per 90 minutes</p>
+                        <div className="overflow-x-auto border-2 border-black rounded-xl shadow-[4px_4px_0px_0px_#000000]">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="bg-gray-50 border-b-2 border-black">
+                                        <th className="text-left py-3 px-4 font-bold text-primary">Stat</th>
+                                        {seasons.map(s => (
+                                            <th key={s} className="text-center py-3 px-4 font-bold text-primary whitespace-nowrap">
+                                                {formatSeason(s)}
+                                                <div className="text-[10px] font-normal text-gray-400 mt-0.5">
+                                                    {ninetiesLookup[s] ? `${ninetiesLookup[s]} 90s` : ""}
+                                                </div>
+                                            </th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {categorizedStats.map(({ category, stats: catStats }) => (
+                                        <>
+                                            <tr key={category}>
+                                                <td colSpan={seasons.length + 1} className="bg-gray-100 py-2 px-4 font-bold text-xs uppercase tracking-wider text-gray-500 border-t border-gray-200">
+                                                    {category}
+                                                </td>
+                                            </tr>
+                                            {catStats.map(statName => (
+                                                <tr key={statName} className="border-t border-gray-100 hover:bg-gray-50 transition-colors">
+                                                    <td className="py-2.5 px-4 text-gray-700 font-medium">{statName}</td>
+                                                    {seasons.map(s => {
+                                                        const val = lookup[`${s}::${statName}`];
+                                                        return (
+                                                            <td key={s} className="text-center py-2.5 px-4 font-mono tabular-nums">
+                                                                {val !== undefined ? val.toFixed(2) : "—"}
+                                                            </td>
+                                                        );
+                                                    })}
+                                                </tr>
+                                            ))}
+                                        </>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
-            )}
+                );
+            })()}
 
             {/* Player Insights */}
             {stats.length > 0 && player && (
