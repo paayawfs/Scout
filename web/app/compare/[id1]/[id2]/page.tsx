@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { supabase, Player, PlayerStat } from "@/lib/supabase";
+import { supabase, Player, PlayerStat, PlayerSeasonStat } from "@/lib/supabase";
 import RadarComparison from "@/components/RadarChart";
 
 interface ComparisonData {
@@ -11,6 +11,8 @@ interface ComparisonData {
     player2: Player;
     stats1: PlayerStat[];
     stats2: PlayerStat[];
+    seasonStats1: PlayerSeasonStat[];
+    seasonStats2: PlayerSeasonStat[];
     similarity: number;
 }
 
@@ -21,24 +23,22 @@ export default function ComparePage() {
 
     const [data, setData] = useState<ComparisonData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [selectedSeason, setSelectedSeason] = useState<string>("average");
 
     useEffect(() => {
         async function fetchComparison() {
             setLoading(true);
             try {
-                // Fetch both players
-                const [player1Res, player2Res] = await Promise.all([
+                // Fetch both players, stats (aggregated + per-season), and similarity
+                const [player1Res, player2Res, stats1Res, stats2Res, season1Res, season2Res] = await Promise.all([
                     supabase.from("players").select("*").eq("id", id1).single(),
                     supabase.from("players").select("*").eq("id", id2).single(),
-                ]);
-
-                // Fetch stats for both
-                const [stats1Res, stats2Res] = await Promise.all([
                     supabase.from("player_stats").select("*").eq("player_id", id1),
                     supabase.from("player_stats").select("*").eq("player_id", id2),
+                    supabase.from("player_season_stats").select("*").eq("player_id", id1),
+                    supabase.from("player_season_stats").select("*").eq("player_id", id2),
                 ]);
 
-                // Fetch similarity
                 const simRes = await supabase
                     .from("player_similarity")
                     .select("similarity")
@@ -52,6 +52,8 @@ export default function ComparePage() {
                         player2: player2Res.data,
                         stats1: stats1Res.data || [],
                         stats2: stats2Res.data || [],
+                        seasonStats1: season1Res.data || [],
+                        seasonStats2: season2Res.data || [],
                         similarity: simRes.data?.similarity || 0,
                     });
                 }
@@ -66,6 +68,48 @@ export default function ComparePage() {
             fetchComparison();
         }
     }, [id1, id2]);
+
+    // Compute available seasons from both players' data
+    const availableSeasons = useMemo(() => {
+        if (!data) return [];
+        const allSeasons = new Set([
+            ...data.seasonStats1.map(s => s.season),
+            ...data.seasonStats2.map(s => s.season),
+        ]);
+        return [...allSeasons].sort();
+    }, [data]);
+
+    // Build display stats based on selected season
+    const displayStats = useMemo(() => {
+        if (!data) return { names: [] as string[], values1: [] as number[], values2: [] as number[] };
+
+        if (selectedSeason === "average") {
+            const names = data.stats1.map(s => s.stat_name);
+            const values1 = data.stats1.map(s => s.value);
+            const values2 = names.map(name => {
+                const stat = data.stats2.find(s => s.stat_name === name);
+                return stat?.value || 0;
+            });
+            return { names, values1, values2 };
+        }
+
+        // Per-season: build from seasonStats
+        const s1Map = new Map<string, number>();
+        const s2Map = new Map<string, number>();
+        data.seasonStats1.filter(s => s.season === selectedSeason).forEach(s => s1Map.set(s.stat_name, s.value));
+        data.seasonStats2.filter(s => s.season === selectedSeason).forEach(s => s2Map.set(s.stat_name, s.value));
+
+        // Use stat names from aggregated stats as the canonical list
+        const names = data.stats1.map(s => s.stat_name);
+        const values1 = names.map(name => s1Map.get(name) ?? 0);
+        const values2 = names.map(name => s2Map.get(name) ?? 0);
+        return { names, values1, values2 };
+    }, [data, selectedSeason]);
+
+    const formatSeason = (s: string) => {
+        const [start, end] = s.split("-");
+        return `${start.slice(2)}/${end.slice(2)}`;
+    };
 
     if (loading) {
         return (
@@ -86,16 +130,7 @@ export default function ComparePage() {
         );
     }
 
-    const { player1, player2, stats1, stats2, similarity } = data;
-
-    // Prepare radar data - align stats by name
-    const statNames = stats1.map((s) => s.stat_name);
-    const radarLabels = statNames;
-    const radarValues1 = stats1.map((s) => s.value);
-    const radarValues2 = statNames.map((name) => {
-        const stat = stats2.find((s) => s.stat_name === name);
-        return stat?.value || 0;
-    });
+    const { player1, player2, similarity } = data;
 
     return (
         <div className="max-w-[1280px] mx-auto px-6 md:px-12 py-8 animate-fadeIn">
@@ -164,23 +199,66 @@ export default function ComparePage() {
                 </div>
             </div>
 
+            {/* Season Switcher */}
+            {availableSeasons.length > 0 && (
+                <div className="flex justify-center mb-8">
+                    <div className="inline-flex border-2 border-black rounded-lg overflow-hidden shadow-[2px_2px_0px_0px_#000000]">
+                        <button
+                            onClick={() => setSelectedSeason("average")}
+                            className={`px-4 py-2 text-sm font-bold transition-colors ${
+                                selectedSeason === "average"
+                                    ? "bg-black text-white"
+                                    : "bg-white text-gray-700 hover:bg-gray-100"
+                            }`}
+                        >
+                            Average
+                        </button>
+                        {availableSeasons.map(s => (
+                            <button
+                                key={s}
+                                onClick={() => setSelectedSeason(s)}
+                                className={`px-4 py-2 text-sm font-bold border-l-2 border-black transition-colors ${
+                                    selectedSeason === s
+                                        ? "bg-black text-white"
+                                        : "bg-white text-gray-700 hover:bg-gray-100"
+                                }`}
+                            >
+                                {formatSeason(s)}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Radar Chart */}
-            {radarLabels.length > 0 && (
+            {displayStats.names.length > 0 && (
                 <div className="card-elevated mb-12">
                     <h2 className="text-xl text-primary font-semibold mb-6 text-center">
                         Statistical Comparison
+                        {selectedSeason !== "average" && (
+                            <span className="text-sm font-normal text-gray-400 ml-2">
+                                ({formatSeason(selectedSeason)})
+                            </span>
+                        )}
                     </h2>
                     <RadarComparison
-                        player1={{ name: player1.name, values: radarValues1, position: player1.position || undefined }}
-                        player2={{ name: player2.name, values: radarValues2, position: player2.position || undefined }}
-                        labels={radarLabels}
+                        player1={{ name: player1.name, values: displayStats.values1, position: player1.position || undefined }}
+                        player2={{ name: player2.name, values: displayStats.values2, position: player2.position || undefined }}
+                        labels={displayStats.names}
                     />
                 </div>
             )}
 
             {/* Stats Table */}
             <div className="card-elevated">
-                <h2 className="text-xl text-primary font-semibold mb-6">Detailed Stats</h2>
+                <h2 className="text-xl text-primary font-semibold mb-6">
+                    Detailed Stats
+                    {selectedSeason !== "average" && (
+                        <span className="text-sm font-normal text-gray-400 ml-2">
+                            ({formatSeason(selectedSeason)})
+                        </span>
+                    )}
+                </h2>
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead>
@@ -197,15 +275,14 @@ export default function ComparePage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {stats1.map((stat) => {
-                                const stat2 = stats2.find((s) => s.stat_name === stat.stat_name);
-                                const val1 = stat.value;
-                                const val2 = stat2?.value || 0;
+                            {displayStats.names.map((statName, i) => {
+                                const val1 = displayStats.values1[i];
+                                const val2 = displayStats.values2[i];
                                 const diff = val1 - val2;
 
                                 return (
-                                    <tr key={stat.stat_key} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                                        <td className="py-3 text-gray-700">{stat.stat_name}</td>
+                                    <tr key={statName} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                                        <td className="py-3 text-gray-700">{statName}</td>
                                         <td className="py-3 text-center text-primary font-medium">
                                             {val1.toFixed(2)}
                                             {diff > 0 && (
